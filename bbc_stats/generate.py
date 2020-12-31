@@ -92,6 +92,8 @@ class PowerRankings(object):
                 weight = weight + 1
                 weights.append(weight)
                 weight = weight * weight
+        if not scores:
+            return 0.0, 0.0
         return np.average(scores), np.average(scores, weights=weights)
 
     def scoring_averages(self):
