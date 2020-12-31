@@ -24,11 +24,11 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --results-output_dir <PATH>
+  --results-directory <PATH>
                         The directory to output result JSON files. (default: ./results)
   --disable-screenshots
                         Turn off screenshots (default: False)
-  --screenshots-output_dir <PATH>
+  --screenshots-directory <PATH>
                         Directory to store screenshots (default: screenshots)
   --filter <REGEX>      A regular expression to filter round names to parse (default: .*)
   --show-browser        Show the browser as data is being scanned. (default: False)

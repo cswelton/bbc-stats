@@ -23,11 +23,11 @@ def parse_args():
     )
     parser.add_argument('ggid', type=str, metavar='<GGID-CODE>',
                         help="GGID Code to parse. This can be any GGID code from a bbc round.")
-    parser.add_argument('--results-output_dir', default='./results', type=str, metavar='<PATH>',
+    parser.add_argument('--results-directory', default='./results', type=str, metavar='<PATH>',
                         help="The directory to output result JSON files.")
     parser.add_argument('--disable-screenshots', action='store_true',
                         help="Turn off screenshots")
-    parser.add_argument("--screenshots-output_dir", type=str, metavar='<PATH>', default='screenshots',
+    parser.add_argument("--screenshots-directory", type=str, metavar='<PATH>', default='screenshots',
                         help="Directory to store screenshots")
     parser.add_argument('--filter', default=".*", metavar='<REGEX>', type=re.compile,
                         help="A regular expression to filter round names to parse")
@@ -58,26 +58,26 @@ def main():
         logger.addHandler(file_handler)
 
     if not args.disable_screenshots:
-        os.makedirs(args.screenshots_dir, exist_ok=True)
+        os.makedirs(args.screenshots_directory, exist_ok=True)
 
-    if not os.path.isdir(args.results_dir):
-        os.mkdir(args.results_dir)
+    if not os.path.isdir(args.results_directory):
+        os.mkdir(args.results_directory)
 
     logger.info("Refreshing BBC Results from GGID {} to {} using filter {}".format(
-        args.ggid, args.results_dir, args.filter.pattern
+        args.ggid, args.results_directory, args.filter.pattern
     ))
 
     parser = GGParser(
         headless=False if args.show_browser else True,
         screenshots_enabled=True if not args.disable_screenshots else False,
-        screenshot_directory=args.screenshots_dir)
+        screenshot_directory=args.screenshots_directory)
 
     try:
         for round_name, result in parser.iter_rounds(args.ggid, filter=args.filter):
-            with open(os.path.join(args.results_dir, "{}.json".format(round_name)), "w") as fp:
+            with open(os.path.join(args.results_directory, "{}.json".format(round_name)), "w") as fp:
                 json.dump(result, fp, indent=4)
         logger.info("Finished refreshing GGID {}. Results have been stored in {}".format(
-            args.ggid, args.results_dir
+            args.ggid, args.results_directory
         ))
     finally:
         parser.close()
