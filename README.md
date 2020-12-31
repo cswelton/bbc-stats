@@ -10,11 +10,11 @@ Run this command to install the `bbc-stats` and `bbc-sync` tools:
 pip install 'bbc_stats@git+https://github.com/cswelton/bbc-stats@master'
 ```
 
-Once installed, the `bbc-sync` and `bbc-stats` command line tools will be available:
+### Usage
+After installing, the `bbc-sync` and `bbc-stats` command line tools will be available:
 
-- `bbc-sync`
+##### bbc-sync
 ```
-$ bbc-sync --help
 usage: bbc-sync [-h] [--results-output_dir <PATH>] [--disable-screenshots] [--screenshots-output_dir <PATH>] [--filter <REGEX>] [--show-browser] [--quiet]
                 [--logfile <PATH>] [--debug]
                 <GGID-CODE>
@@ -35,12 +35,10 @@ optional arguments:
   --quiet               Do not print logs to the screen. (default: False)
   --logfile <PATH>      Send logs to a file. (default: None)
   --debug               Turn on debug logging. (default: False)
-$ 
 ```
 
-- `bbc-stats`
+##### bbc-stats
 ```
-$ bbc-stats --help
 usage: bbc-stats [-h] [--results-directory <PATH>] [--weeks <integer>] [--min-rounds <integer>] [--weighted-rounds <integer>] [--outlier-distance <float>]
                  [--weight-birdies <float>] [--weight-scoring <float>] [--weight-pars <float>] [--dump] [--summary] [--player-filter <regex>]
                  [--github-site <PATH>] [--points-flight-winner POINTS_FLIGHT_WINNER] [--points-skin POINTS_SKIN] [--points-nassau-front POINTS_NASSAU_FRONT]
@@ -78,5 +76,4 @@ optional arguments:
                         Point value for winning back 9 nassau bet. (default: 1)
   --points-nassau-overall POINTS_NASSAU_OVERALL
                         Point value for winning overall nassau bet. (default: 1)
-$
 ```
