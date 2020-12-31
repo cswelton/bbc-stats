@@ -13,7 +13,7 @@ pip install 'bbc_stats@git+https://github.com/cswelton/bbc-stats@master'
 ### Usage
 After installing, the `bbc-sync` and `bbc-stats` command line tools will be available:
 
-##### bbc-sync
+##### `bbc-sync`
 ```
 usage: bbc-sync [-h] [--results-output_dir <PATH>] [--disable-screenshots] [--screenshots-output_dir <PATH>] [--filter <REGEX>] [--show-browser] [--quiet]
                 [--logfile <PATH>] [--debug]
@@ -37,7 +37,7 @@ optional arguments:
   --debug               Turn on debug logging. (default: False)
 ```
 
-##### bbc-stats
+##### `bbc-stats`
 ```
 usage: bbc-stats [-h] [--results-directory <PATH>] [--weeks <integer>] [--min-rounds <integer>] [--weighted-rounds <integer>] [--outlier-distance <float>]
                  [--weight-birdies <float>] [--weight-scoring <float>] [--weight-pars <float>] [--dump] [--summary] [--player-filter <regex>]
