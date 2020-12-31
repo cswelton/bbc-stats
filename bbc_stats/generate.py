@@ -423,7 +423,7 @@ class RenderOutput(object):
         players = PlayersCollection(results_directory, points_config=points_config)
         players.add_rounds(rounds_data)
         players_data = players.export(project_root_dir)
-        data = GithubData(results_directory)
+        data = GithubData(results_directory, stats_obj=self.pr.stats)
         github_data = data.export(project_root_dir)
         points_data = [["Rank", "Points", "Player", "Rounds", "Flight Wins", "Skins", "Overall", "Front", "Back"]]
         for idx, player_data in enumerate(sorted(players_data.values(), key=itemgetter("points"), reverse=True)):

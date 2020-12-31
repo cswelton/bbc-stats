@@ -14,9 +14,10 @@ class GithubSiteBase(object):
     output_format = "yaml"
     output_kwargs = {}
 
-    def __init__(self, results_directory, points_config={"fw": 1, "s": 1, "fr": 1, "ba": 1, "ov": 1 }):
+    def __init__(self, results_directory, points_config={"fw": 1, "s": 1, "fr": 1, "ba": 1, "ov": 1 }, stats_obj=None):
         self.rounds = None
         self.players = None
+        self.stats = stats_obj
         self.points_config = points_config
         self.results_directory = results_directory
         self.results = {}
