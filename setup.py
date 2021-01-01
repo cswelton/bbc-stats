@@ -7,7 +7,7 @@ setuptools.setup(
     name="bbc_stats",
     version="1.0.0",
     author="Craig Welton",
-    description="Syncs round data and builds statistics and data files for zogby-group website",
+    description="Syncs round_info data and builds statistics and data files for zogby-group website",
     install_requires=[
         'numpy>=1.19.4',
         'terminaltables==3.1.0',

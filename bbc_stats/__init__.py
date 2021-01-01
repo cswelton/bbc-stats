@@ -29,7 +29,7 @@ class GithubSiteBase(object):
                     data = json.load(fp)
                     round_date = self.parse_round_name(data["name"])
                     if round_date is None:
-                        print("Unable to find round date for round %s, assuming today..." % data["name"])
+                        print("Unable to find round_info date for round_info %s, assuming today..." % data["name"])
                         round_date = datetime.date.today()
                     data["results"]["date"] = round_date
                     self.results[data["name"]] = data["results"]

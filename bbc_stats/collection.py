@@ -6,7 +6,7 @@ import os
 
 class RoundsCollection(GithubSiteBase):
     """
-    Updates <root>/_rounds/ with round collections...
+    Updates <root>/_rounds/ with round_info collections...
     Example:
         # Round 59 (Wed, December 23).md
         ---
@@ -121,9 +121,30 @@ class RoundsCollection(GithubSiteBase):
                 skins[sorted_items[0][0]].append(hole)
         return dict(skins)
 
+    def check_round_valid(self, round_name, round_info):
+        # Make sure all teams have even number of players
+        team_length = 0
+        for idx, team in enumerate(round_info["teams"]):
+            if idx == 0:
+                team_length = len(team)
+            elif team_length != len(team):
+                print("Skipping round_info %s, teams do not contain equal number of players" % round_name)
+                return False
+            else:
+                team_length = len(team)
+        # Makes sure all players have 18 scores posted
+        for player_name, info in round_info["scores"].items():
+            if len(info["scores"]) != 18:
+                print("Skipping round_info %s, not all players finished 18 holes." % round_name)
+                return False
+        return True
+
     def parse(self, project_root_dir):
         data = {}
         for round_name, round in self.results.items():
+            valid_round = self.check_round_valid(round_name, round)
+            if not valid_round:
+                continue
             data[round_name] = {
                 "name": round_name,
                 "date": str(round["date"]),

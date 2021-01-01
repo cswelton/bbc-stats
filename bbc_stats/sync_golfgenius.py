@@ -22,7 +22,7 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('ggid', type=str, metavar='<GGID-CODE>',
-                        help="GGID Code to parse. This can be any GGID code from a bbc round.")
+                        help="GGID Code to parse. This can be any GGID code from a bbc round_info.")
     parser.add_argument('--results-directory', default='./results', type=str, metavar='<PATH>',
                         help="The directory to output result JSON files.")
     parser.add_argument('--disable-screenshots', action='store_true',
@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument("--screenshots-directory", type=str, metavar='<PATH>', default='screenshots',
                         help="Directory to store screenshots")
     parser.add_argument('--filter', default=".*", metavar='<REGEX>', type=re.compile,
-                        help="A regular expression to filter round names to parse")
+                        help="A regular expression to filter round_info names to parse")
     parser.add_argument('--show-browser', action='store_true',
                         help="Show the browser as data is being scanned.")
     parser.add_argument('--quiet', action='store_true',

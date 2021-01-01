@@ -28,8 +28,8 @@ def parse_args():
     )
     parser.add_argument('--results-directory', default='./results', type=str, metavar='<PATH>',
                         help="Path to results directory")
-    parser.add_argument('--weeks', default=4, type=int, metavar='<integer>',
-                        help="Data range in weeks")
+    parser.add_argument('--weeks', type=int, metavar='<integer>',
+                        help="Data range in weeks. If not set all rounds are selected.")
     parser.add_argument('--min-rounds', default=0, type=int, metavar='<integer>',
                         help="Minimum number of rounds for player to count in rankings")
     parser.add_argument('--weighted-rounds', default=2, type=int, metavar='<integer>',
@@ -37,11 +37,11 @@ def parse_args():
     parser.add_argument('--outlier-distance', type=float, metavar='<float>',
                         help="Distance from median to remove outliers.")
     parser.add_argument('--weight-birdies', type=float, default=5, metavar='<float>',
-                        help="Relative weight to apply to birdies or better per round average.")
+                        help="Relative weight to apply to birdies or better per round_info average.")
     parser.add_argument('--weight-scoring', type=float, default=4, metavar='<float>',
                         help="Relative weight to apply to scoring average.")
     parser.add_argument('--weight-pars', type=float, default=2, metavar='<float>',
-                        help="Relative weight to apply to pars per round average.")
+                        help="Relative weight to apply to pars per round_info average.")
     parser.add_argument('--dump', action='store_true',
                         help="Dump player data as JSON")
     parser.add_argument('--summary', action='store_true',
@@ -446,7 +446,11 @@ class RenderOutput(object):
 
 def main():
     args = parse_args()
-    pr = PowerRankings(args.results_directory, timedelta=datetime.timedelta(weeks=args.weeks),
+    if args.weeks is not None:
+        timedelta = datetime.timedelta(weeks=args.weeks)
+    else:
+        timedelta = None
+    pr = PowerRankings(args.results_directory, timedelta=timedelta,
                        weighted_rounds=args.weighted_rounds or None,
                        rankings_weights=[args.weight_scoring, args.weight_birdies, args.weight_pars],
                        min_rounds=args.min_rounds)
