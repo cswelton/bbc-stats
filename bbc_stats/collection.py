@@ -2,6 +2,7 @@ from bbc_stats import GithubSiteBase
 from operator import itemgetter
 from collections import defaultdict
 import os
+import datetime
 
 
 class RoundsCollection(GithubSiteBase):
@@ -129,24 +130,57 @@ class RoundsCollection(GithubSiteBase):
                 team_length = len(team)
             elif team_length != len(team):
                 print("Skipping round_info %s, teams do not contain equal number of players" % round_name)
-                return False
+                return False, "Teams do not contain equal number of players"
             else:
                 team_length = len(team)
         # Makes sure all players have 18 scores posted
         for player_name, info in round_info["scores"].items():
             if len(info["scores"]) != 18:
                 print("Skipping round_info %s, not all players finished 18 holes." % round_name)
-                return False
-        return True
+                return False, "Not all players finished 18 holes"
+        return True, None
+
+    def add_points(self, round_data):
+        round_data["points"] = {}
+        round_data["total_points"] = 0
+        for team in round_data["teams"]:
+            for player_info in team["players"]:
+                player_name = player_info["name"]
+                round_data["points"][player_name] = 0
+                if player_name in round_data["flight_winners"]:
+                    round_data["points"][player_name] += self.points_config["fw"]
+                    round_data["total_points"] += self.points_config["fw"]
+                for skin in round_data["skins"].get(player_name, []):
+                    round_data["points"][player_name] += self.points_config["s"]
+                    round_data["total_points"] += self.points_config["s"]
+                if team["front"]:
+                    round_data["points"][player_name] += self.points_config["fr"]
+                    round_data["total_points"] += self.points_config["fr"]
+                if team["back"]:
+                    round_data["points"][player_name] += self.points_config["ba"]
+                    round_data["total_points"] += self.points_config["ba"]
+                if team["overall"]:
+                    round_data["points"][player_name] += self.points_config["ov"]
+                    round_data["total_points"] += self.points_config["ov"]
 
     def parse(self, project_root_dir):
         data = {}
         for round_name, round in self.results.items():
-            valid_round = self.check_round_valid(round_name, round)
+            valid_round, reason = self.check_round_valid(round_name, round)
             if not valid_round:
+                data[round_name] = {
+                    "name": round_name,
+                    "valid": False,
+                    "reason": reason,
+                    "date": str(round["date"]),
+                    "date_timestamp": round["date"].toordinal(),
+                    "gg_url": round.get("gg_url"),
+                    "total_points": 0
+                }
                 continue
             data[round_name] = {
                 "name": round_name,
+                "valid": True,
                 "date": str(round["date"]),
                 "date_timestamp": round["date"].toordinal(),
                 "gg_url": round.get("gg_url"),
@@ -154,6 +188,7 @@ class RoundsCollection(GithubSiteBase):
                 "flight_winners": self.parse_flight_winners(round),
                 "skins": self.parse_skins(round)
             }
+            self.add_points(data[round_name])
         return data
 
 
@@ -175,25 +210,39 @@ class PlayersCollection(GithubSiteBase):
         target["back_wins"] = 0
         target["overall_wins"] = 0
         target["rounds"] = 0
+        target["rounds_by_month"] = defaultdict(list)
+        target["ignored_rounds"] = []
         for round_name, round in self.rounds.items():
+            round_points = 0
             if player in round.get("flight_winners", []):
                 target["flight_wins"] += 1
-                target["points"] += fw
+                round_points += fw
             for _ in round.get("skins", {}).get(player, []):
                 target["skins"] += 1
-                target["points"] += s
+                round_points += s
             for team in round.get("teams", []):
                 if player in [x["name"] for x in team["players"]]:
                     target["rounds"] += 1
                     if team.get("front"):
                         target["front_wins"] += 1
-                        target["points"] += fr
+                        round_points += fr
                     if team.get("back"):
                         target["back_wins"] += 1
-                        target["points"] += ba
+                        round_points += ba
                     if team.get("overall"):
                         target["overall_wins"] += 1
-                        target["points"] += ov
+                        round_points += ov
+            round_date = datetime.date.fromordinal(round["date_timestamp"])
+            target["rounds_by_month"][round_date.month].append({"name": round_name, "points": round_points})
+        for month, rounds in target["rounds_by_month"].items():
+            rounds_sorted = sorted(rounds, key=itemgetter("points"), reverse=True)
+            if len(rounds_sorted) > 4:
+                valid_points = sum([r["points"] for r in rounds_sorted[0:4]])
+                target["ignored_rounds"].extend([r["name"] for r in rounds_sorted[4:]])
+            else:
+                valid_points = sum([r["points"] for r in rounds_sorted])
+            target["points"] += valid_points
+        target["rounds_by_month"] = dict(target["rounds_by_month"])
 
     def parse(self, project_root_dir):
         data = {}

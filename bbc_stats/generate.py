@@ -50,6 +50,8 @@ def parse_args():
                         help="Show data for player names that match filter")
     parser.add_argument('--github-site', metavar='<PATH>',
                         help="Path to root github site. If set, data will be updated.")
+    parser.add_argument('--points-config-file', metavar='<PATH>',
+                        help="Path to a JSON file containing points configuration.")
     parser.add_argument('--points-flight-winner', default=1, type=int, help="Point value for winning flight (ABCD).")
     parser.add_argument('--points-skin', default=1, type=int, help="Point value for skin.")
     parser.add_argument('--points-nassau-front', default=1, type=int,
@@ -418,7 +420,7 @@ class RenderOutput(object):
         :param project_root_dir: The path to the root of the github pages repo
         :return:
         """
-        rounds = RoundsCollection(results_directory)
+        rounds = RoundsCollection(results_directory, points_config=points_config)
         rounds_data = rounds.export(project_root_dir)
         players = PlayersCollection(results_directory, points_config=points_config)
         players.add_rounds(rounds_data)
@@ -471,11 +473,15 @@ def main():
         print(json.dumps(data, indent=4, default=str, sort_keys=True))
     out.close()
     if args.github_site:
-        points_config = {
-            "fw": args.points_flight_winner,
-            "s": args.points_skin,
-            "fr": args.points_nassau_front,
-            "ba": args.points_nassau_back,
-            "ov": args.points_nassau_overall
-        }
+        if args.points_config_file:
+            with open(args.points_config_file, "r") as fp:
+                points_config = json.load(fp)
+        else:
+            points_config = {
+                "fw": args.points_flight_winner,
+                "s": args.points_skin,
+                "fr": args.points_nassau_front,
+                "ba": args.points_nassau_back,
+                "ov": args.points_nassau_overall
+            }
         out.update_github_site(args.results_directory, args.github_site, points_config)
