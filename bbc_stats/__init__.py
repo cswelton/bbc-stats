@@ -45,8 +45,12 @@ class GithubSiteBase(object):
         m = self.round_regexp.search(name)
         if m:
             round_info = m.groupdict()
+            if int(round_info["round_id"]) > 60:
+                year = 2021
+            else:
+                year = 2020
             return datetime.date(
-                2020,
+                year,
                 MONTH_IDX.index(
                     round_info["month"].lower()) + 1,
                 int(round_info["day"]))
