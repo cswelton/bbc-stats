@@ -60,6 +60,8 @@ def parse_args():
                         help="Point value for winning back 9 nassau bet.")
     parser.add_argument('--points-nassau-overall', default=1, type=int,
                         help="Point value for winning overall nassau bet.")
+    parser.add_argument('--max-rounds-per-month', default=4, type=int,
+                        help="Max rounds that count towards points each month.")
     return parser.parse_args()
 
 
@@ -482,6 +484,7 @@ def main():
                 "s": args.points_skin,
                 "fr": args.points_nassau_front,
                 "ba": args.points_nassau_back,
-                "ov": args.points_nassau_overall
+                "ov": args.points_nassau_overall,
+                "max_rounds_per_month": args.max_rounds_per_month
             }
         out.update_github_site(args.results_directory, args.github_site, points_config)
