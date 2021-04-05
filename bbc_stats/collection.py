@@ -212,6 +212,7 @@ class PlayersCollection(GithubSiteBase):
         target["rounds"] = 0
         target["rounds_by_month"] = defaultdict(list)
         target["ignored_rounds"] = []
+        target["all_rounds"] = []
         for round_name, round in self.rounds.items():
             round_points = 0
             played = False
@@ -242,22 +243,48 @@ class PlayersCollection(GithubSiteBase):
                         "points": round_points,
                         "date": round_date
                     })
-        for month, rounds in target["rounds_by_month"].items():
-            rounds_sorted = sorted(rounds, key=itemgetter("date"), reverse=True)
-            _ignored_rounds = []
-            if len(rounds_sorted) > points_config["max_rounds_per_month"]:
-                valid_points = sum([r["points"] for r in rounds_sorted[0:points_config["max_rounds_per_month"]]])
-                _ignored_rounds = [r["name"] for r in rounds_sorted[points_config["max_rounds_per_month"]:]]
-                target["ignored_rounds"].extend(_ignored_rounds)
-            else:
-                valid_points = sum([r["points"] for r in rounds_sorted])
-            target["points"] += valid_points
-            for round in rounds:
-                if round["name"] in _ignored_rounds:
-                    round["ignored"] = True
+                target["all_rounds"].append({
+                    "name": round_name,
+                    "points": round_points,
+                    "date": round_date
+                })
+        target["all_rounds"] = sorted(target["all_rounds"], key=itemgetter("date"))
+        if points_config["max_rounds_per_month"] > 0:
+            for month, rounds in target["rounds_by_month"].items():
+                rounds_sorted = sorted(rounds, key=itemgetter("date"), reverse=True)
+                _ignored_rounds = []
+
+                if len(rounds_sorted) > points_config["max_rounds_per_month"]:
+                    valid_points = sum([r["points"] for r in rounds_sorted[0:points_config["max_rounds_per_month"]]])
+                    _ignored_rounds = [r["name"] for r in rounds_sorted[points_config["max_rounds_per_month"]:]]
+                    target["ignored_rounds"].extend(_ignored_rounds)
                 else:
-                    round["ignored"] = False
-        target["rounds_by_month"] = dict(target["rounds_by_month"])
+                    valid_points = sum([r["points"] for r in rounds_sorted])
+                target["points"] += valid_points
+                for round in rounds:
+                    if round["name"] in _ignored_rounds:
+                        round["ignored"] = True
+                    else:
+                        round["ignored"] = False
+            target["rounds_by_month"] = dict(target["rounds_by_month"])
+        else:
+            valid_rounds = self.replace_rounds(target["all_rounds"], points_config["season_round_count"], points_config["replacement_scores"])
+            target["points"] = sum([r["points"] for r in valid_rounds])
+
+    def replace_rounds(self, all_rounds, season_round_count, replacement_scores):
+        sorted_by_points = sorted(all_rounds[:season_round_count], key=itemgetter("points"))
+        extra_rounds = []
+        if len(all_rounds) > season_round_count:
+            extra_sorted = sorted(all_rounds[season_round_count:], key=itemgetter('points'), reverse=True)
+            extra_rounds = extra_sorted[:replacement_scores]
+        replaced = []
+        for r in extra_rounds:
+            for idx, round in enumerate(list(sorted_by_points)):
+                if r["points"] > round["points"] and idx not in replaced:
+                    replaced.append(idx)
+                    sorted_by_points[idx] = r
+                    break
+        return sorted_by_points
 
     def parse(self, project_root_dir):
         data = {}
