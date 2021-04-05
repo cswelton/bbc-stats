@@ -77,22 +77,41 @@ class RoundsCollection(GithubSiteBase):
             back.append(team["back"])
             overall.append(team["overall"])
         front_win = sorted(set(front))[0]
+        front_split = front.count(front_win)
         back_win = sorted(set(back))[0]
+        back_split = back.count(back_win)
         overall_win = sorted(set(overall))[0]
+        overall_split = overall.count(overall_win)
         for team in teams:
             if team["front"] == front_win:
                 team["front"] = True
+                team["front_split"] = front_split
             else:
                 team["front"] = False
             if team["back"] == back_win:
                 team["back"] = True
+                team["back_split"] = back_split
             else:
                 team["back"] = False
             if team["overall"] == overall_win:
                 team["overall"] = True
+                team["overall_split"] = overall_split
             else:
                 team["overall"] = False
         return teams
+
+    def parse_flight_split(self, round):
+        flights = defaultdict(list)
+        for team in round["teams"]:
+            for idx, player in enumerate(team):
+                if player in round["scores"] and len(round["scores"][player]["scores"]) == 18:
+                    flights[idx].append((player, sum([s["score"] for s in round["scores"][player]["scores"].values()])))
+        flight_split = []
+        for idx, items in flights.items():
+            winning_score = sorted(set([x[1] for x in items]))[0]
+            split = [x[1] for x in items].count(winning_score)
+            flight_split.append(split)
+        return flight_split
 
     def parse_flight_winners(self, round):
         flights = defaultdict(list)
@@ -148,20 +167,21 @@ class RoundsCollection(GithubSiteBase):
                 player_name = player_info["name"]
                 round_data["points"][player_name] = 0
                 if player_name in round_data["flight_winners"]:
-                    round_data["points"][player_name] += self.points_config["fw"]
-                    round_data["total_points"] += self.points_config["fw"]
+                    fw_split = round_data["flight_splits"][round_data["flight_winners"].index(player_name)]
+                    round_data["points"][player_name] += self.points_config["fw"] / fw_split
+                    round_data["total_points"] += self.points_config["fw"] / fw_split
                 for skin in round_data["skins"].get(player_name, []):
-                    round_data["points"][player_name] += self.points_config["s"]
-                    round_data["total_points"] += self.points_config["s"]
+                    round_data["points"][player_name] += float(self.points_config["s"])
+                    round_data["total_points"] += float(self.points_config["s"])
                 if team["front"]:
-                    round_data["points"][player_name] += self.points_config["fr"]
-                    round_data["total_points"] += self.points_config["fr"]
+                    round_data["points"][player_name] += self.points_config["fr"] / team["front_split"]
+                    round_data["total_points"] += self.points_config["fr"] / team["front_split"]
                 if team["back"]:
-                    round_data["points"][player_name] += self.points_config["ba"]
-                    round_data["total_points"] += self.points_config["ba"]
+                    round_data["points"][player_name] += self.points_config["ba"] / team["back_split"]
+                    round_data["total_points"] += self.points_config["ba"] / team["back_split"]
                 if team["overall"]:
-                    round_data["points"][player_name] += self.points_config["ov"]
-                    round_data["total_points"] += self.points_config["ov"]
+                    round_data["points"][player_name] += self.points_config["ov"] / team["overall_split"]
+                    round_data["total_points"] += self.points_config["ov"] / team["overall_split"]
 
     def parse(self, project_root_dir):
         data = {}
@@ -186,6 +206,7 @@ class RoundsCollection(GithubSiteBase):
                 "gg_url": round.get("gg_url"),
                 "teams": self.parse_teams(round),
                 "flight_winners": self.parse_flight_winners(round),
+                "flight_splits": self.parse_flight_split(round),
                 "skins": self.parse_skins(round)
             }
             self.add_points(data[round_name])
@@ -198,11 +219,6 @@ class PlayersCollection(GithubSiteBase):
     output_kwargs = {}
 
     def generate_points(self, player, target, points_config):
-        fw = points_config["fw"]
-        s = points_config["s"]
-        fr = points_config["fr"]
-        ba = points_config["ba"]
-        ov = points_config["ov"]
         target["points"] = 0
         target["skins"] = 0
         target["flight_wins"] = 0
@@ -214,27 +230,22 @@ class PlayersCollection(GithubSiteBase):
         target["ignored_rounds"] = []
         target["all_rounds"] = []
         for round_name, round in self.rounds.items():
-            round_points = 0
+            round_points = round["points"].get(player, 0)
             played = False
             if player in round.get("flight_winners", []):
                 target["flight_wins"] += 1
-                round_points += fw
             for _ in round.get("skins", {}).get(player, []):
                 target["skins"] += 1
-                round_points += s
             for team in round.get("teams", []):
                 if player in [x["name"] for x in team["players"]]:
                     target["rounds"] += 1
                     played = True
                     if team.get("front"):
                         target["front_wins"] += 1
-                        round_points += fr
                     if team.get("back"):
                         target["back_wins"] += 1
-                        round_points += ba
                     if team.get("overall"):
                         target["overall_wins"] += 1
-                        round_points += ov
             if played:
                 round_date = datetime.date.fromordinal(round["date_timestamp"])
                 target["rounds_by_month"][round_date.month].append(
