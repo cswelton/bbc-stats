@@ -144,6 +144,8 @@ class RoundsCollection(GithubSiteBase):
     def check_round_valid(self, round_name, round_info):
         # Make sure all teams have even number of players
         team_length = 0
+        min_players = self.points_config["min_players"]
+        players = 0
         for idx, team in enumerate(round_info["teams"]):
             if idx == 0:
                 team_length = len(team)
@@ -152,11 +154,19 @@ class RoundsCollection(GithubSiteBase):
                 return False, "Teams do not contain equal number of players"
             else:
                 team_length = len(team)
+            players += len(team)
         # Makes sure all players have 18 scores posted
         for player_name, info in round_info["scores"].items():
             if len(info["scores"]) != 18:
                 print("Skipping round_info %s, not all players finished 18 holes." % round_name)
                 return False, "Not all players finished 18 holes"
+        if players < min_players:
+            return False, "Only {} players, {} are required".format(players, min_players)
+        round_date = round_info["date"]
+        season_start = datetime.date.fromisoformat(self.points_config["fedex_cup_start_date"])
+        season_end = datetime.date.fromisoformat(self.points_config["fedex_cup_end_date"])
+        if not season_start < round_date < season_end:
+            return False, "Round date %s, does not fall within season (%s to %s)" % (round_date, season_start, season_end)
         return True, None
 
     def add_points(self, round_data):
@@ -195,7 +205,8 @@ class RoundsCollection(GithubSiteBase):
                     "date": str(round["date"]),
                     "date_timestamp": round["date"].toordinal(),
                     "gg_url": round.get("gg_url"),
-                    "total_points": 0
+                    "total_points": 0,
+                    "points": {}
                 }
                 continue
             data[round_name] = {

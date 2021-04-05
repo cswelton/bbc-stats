@@ -4,7 +4,7 @@ import json
 import datetime
 import yaml
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 MONTH_IDX=['january', 'february', 'march', 'april', 'may', 'june', 'july',
            'august', 'september', 'october', 'november', 'december']
 
@@ -41,14 +41,10 @@ class GithubSiteBase(object):
         self.players = players_data
 
     def parse_round_name(self, name):
-        # ToDo: Refactor this to support 2021 rounds!!
         m = self.round_regexp.search(name)
         if m:
             round_info = m.groupdict()
-            if int(round_info["round_id"]) > 60:
-                year = 2021
-            else:
-                year = 2020
+            year = 2021
             return datetime.date(
                 year,
                 MONTH_IDX.index(
