@@ -64,9 +64,10 @@ class RoundsCollection(GithubSiteBase):
                 "players": [
                     {
                         "name": player,
+                        "flight": flight,
                         "score": sum(
                             [x["score"] for x in round["scores"][player]["scores"].values()])
-                    } for player in team],
+                    } for flight, player in enumerate(team)],
                 "front": self.team_best_ball(round, range(1, 10), team),
                 "back": self.team_best_ball(round, range(10, 19), team),
                 "overall": self.team_best_ball(round, range(1, 19), team)
@@ -119,13 +120,13 @@ class RoundsCollection(GithubSiteBase):
             for idx, player in enumerate(team):
                 if player in round["scores"] and len(round["scores"][player]["scores"]) == 18:
                     flights[idx].append((player, sum([s["score"] for s in round["scores"][player]["scores"].values()])))
-        flight_winners = []
+        flight_winners = defaultdict(list)
         for idx, items in flights.items():
             winning_score = sorted(set([x[1] for x in items]))[0]
             for player, score in items:
                 if score == winning_score:
-                    flight_winners.append(player)
-        return flight_winners
+                    flight_winners[idx].append(player)
+        return dict(flight_winners)
 
     def parse_skins(self, round):
         hole_scores = defaultdict(list)
@@ -147,6 +148,13 @@ class RoundsCollection(GithubSiteBase):
         min_players = self.points_config["min_players"]
         players = 0
         for idx, team in enumerate(round_info["teams"]):
+            round_date = round_info["date"]
+            season_start = datetime.date.fromisoformat(self.points_config["fedex_cup_start_date"])
+            season_end = datetime.date.fromisoformat(self.points_config["fedex_cup_end_date"])
+            if not season_start < round_date < season_end:
+                return False, "Round date %s, does not fall within season (%s to %s)" % (
+                round_date, season_start, season_end)
+
             if idx == 0:
                 team_length = len(team)
             elif team_length != len(team):
@@ -162,11 +170,7 @@ class RoundsCollection(GithubSiteBase):
                 return False, "Not all players finished 18 holes"
         if players < min_players:
             return False, "Only {} players, {} are required".format(players, min_players)
-        round_date = round_info["date"]
-        season_start = datetime.date.fromisoformat(self.points_config["fedex_cup_start_date"])
-        season_end = datetime.date.fromisoformat(self.points_config["fedex_cup_end_date"])
-        if not season_start < round_date < season_end:
-            return False, "Round date %s, does not fall within season (%s to %s)" % (round_date, season_start, season_end)
+
         return True, None
 
     def add_points(self, round_data):
@@ -176,10 +180,11 @@ class RoundsCollection(GithubSiteBase):
             for player_info in team["players"]:
                 player_name = player_info["name"]
                 round_data["points"][player_name] = 0
-                if player_name in round_data["flight_winners"]:
-                    fw_split = round_data["flight_splits"][round_data["flight_winners"].index(player_name)]
-                    round_data["points"][player_name] += self.points_config["fw"] / fw_split
-                    round_data["total_points"] += self.points_config["fw"] / fw_split
+                for flight_idx, winners in round_data["flight_winners"].items():
+                    if player_name in winners:
+                        fw_split = round_data["flight_splits"][flight_idx]
+                        round_data["points"][player_name] += self.points_config["fw"] / fw_split
+                        round_data["total_points"] += self.points_config["fw"] / fw_split
                 for skin in round_data["skins"].get(player_name, []):
                     round_data["points"][player_name] += float(self.points_config["s"])
                     round_data["total_points"] += float(self.points_config["s"])
@@ -196,6 +201,7 @@ class RoundsCollection(GithubSiteBase):
     def parse(self, project_root_dir):
         data = {}
         for round_name, round in self.results.items():
+            print("Parsing %s" % round_name)
             valid_round, reason = self.check_round_valid(round_name, round)
             if not valid_round:
                 data[round_name] = {
@@ -220,7 +226,12 @@ class RoundsCollection(GithubSiteBase):
                 "flight_splits": self.parse_flight_split(round),
                 "skins": self.parse_skins(round)
             }
-            self.add_points(data[round_name])
+            try:
+                self.add_points(data[round_name])
+            except Exception as exc:
+                import json
+                print(json.dumps(data[round_name], indent=4, default=str))
+                raise
         return data
 
 
@@ -243,8 +254,10 @@ class PlayersCollection(GithubSiteBase):
         for round_name, round in self.rounds.items():
             round_points = round["points"].get(player, 0)
             played = False
-            if player in round.get("flight_winners", []):
-                target["flight_wins"] += 1
+            for flight_winners in round.get("flight_winners", {}).values():
+                if player in flight_winners:
+                    target["flight_wins"] += 1
+
             for _ in round.get("skins", {}).get(player, []):
                 target["skins"] += 1
             for team in round.get("teams", []):
