@@ -23,6 +23,7 @@ def parse_args():
     )
     parser.add_argument('ggid', type=str, metavar='<GGID-CODE>',
                         help="GGID Code to parse. This can be any GGID code from a bbc round_info.")
+    parser.add_argument('--sync-all', action='store_true', help='If set, previously collected data will be re-synced.')
     parser.add_argument('--results-directory', default='./results', type=str, metavar='<PATH>',
                         help="The directory to output result JSON files.")
     parser.add_argument('--disable-screenshots', action='store_true',
@@ -70,7 +71,8 @@ def main():
     parser = GGParser(
         headless=False if args.show_browser else True,
         screenshots_enabled=True if not args.disable_screenshots else False,
-        screenshot_directory=args.screenshots_directory)
+        screenshot_directory=args.screenshots_directory,
+        existing_results=args.results_directory if not args.sync_all else None)
 
     try:
         for round_name, result in parser.iter_rounds(args.ggid, filter=args.filter):
