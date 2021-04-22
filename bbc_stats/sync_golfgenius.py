@@ -4,6 +4,7 @@ import json
 import argparse
 import os
 import warnings
+import sys
 
 
 with warnings.catch_warnings():
@@ -74,12 +75,18 @@ def main():
         screenshot_directory=args.screenshots_directory,
         existing_results=args.results_directory if not args.sync_all else None)
 
+    synced_rounds = 0
     try:
         for round_name, result in parser.iter_rounds(args.ggid, filter=args.filter):
             with open(os.path.join(args.results_directory, "{}.json".format(round_name)), "w") as fp:
                 json.dump(result, fp, indent=4)
+                synced_rounds += 1
         logger.info("Finished refreshing GGID {}. Results have been stored in {}".format(
             args.ggid, args.results_directory
         ))
+        if synced_rounds == 0:
+            sys.exit(1)
+        else:
+            sys.exit(0)
     finally:
         parser.close()
