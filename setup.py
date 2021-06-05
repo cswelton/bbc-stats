@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="bbc_stats",
-    version="1.0.4",
+    version="1.0.5",
     author="Craig Welton",
     description="Syncs round_info data and builds statistics and data files for zogby-group website",
     install_requires=[

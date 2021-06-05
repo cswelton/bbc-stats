@@ -52,6 +52,8 @@ def parse_args():
                         help="Path to root github site. If set, data will be updated.")
     parser.add_argument('--points-config-file', metavar='<PATH>',
                         help="Path to a JSON file containing points configuration.")
+    parser.add_argument('--blacklist-rounds-file', metavar='<PATH>',
+                        help="Path to a text file containing round names that have been blacklisted.")
     parser.add_argument('--points-flight-winner', default=1, type=int, help="Point value for winning flight (ABCD).")
     parser.add_argument('--points-skin', default=1, type=int, help="Point value for skin.")
     parser.add_argument('--points-nassau-front', default=1, type=int,
@@ -407,7 +409,7 @@ class RenderOutput(object):
     def close(self):
         self.excel.close()
 
-    def update_github_site(self, results_directory, project_root_dir, points_config):
+    def update_github_site(self, results_directory, project_root_dir, points_config, blacklisted_rounds):
         """
         Updates collections:
             _rounds/<name>.md
@@ -422,9 +424,11 @@ class RenderOutput(object):
         :param project_root_dir: The path to the root of the github pages repo
         :return:
         """
-        rounds = RoundsCollection(results_directory, points_config=points_config)
+        rounds = RoundsCollection(results_directory, points_config=points_config,
+                                  blacklisted_rounds=blacklisted_rounds)
         rounds_data = rounds.export(project_root_dir)
-        players = PlayersCollection(results_directory, points_config=points_config)
+        players = PlayersCollection(results_directory, points_config=points_config,
+                                    blacklisted_rounds=blacklisted_rounds)
         players.add_rounds(rounds_data)
         players_data = players.export(project_root_dir)
         data = GithubData(results_directory, stats_obj=self.pr.stats)
@@ -487,4 +491,9 @@ def main():
                 "ov": args.points_nassau_overall,
                 "max_rounds_per_month": args.max_rounds_per_month
             }
-        out.update_github_site(args.results_directory, args.github_site, points_config)
+        if args.blacklist_rounds_file:
+            with open(args.blacklist_rounds_file, "r") as fp:
+                blacklisted_rounds = [r.strip() for r in fp.readlines() if r.strip()]
+        else:
+            blacklisted_rounds = []
+        out.update_github_site(args.results_directory, args.github_site, points_config, blacklisted_rounds)

@@ -143,6 +143,10 @@ class RoundsCollection(GithubSiteBase):
         return dict(skins)
 
     def check_round_valid(self, round_name, round_info):
+        # Check if round blacklisted
+        if round_name in self.blacklisted_rounds:
+            print("Skipping round %s, round is blacklisted" % round_name)
+            return False, "Round deemed unofficial by board"
         # Make sure all teams have even number of players
         team_length = 0
         min_players = self.points_config["min_players"]

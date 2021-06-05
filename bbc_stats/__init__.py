@@ -4,7 +4,7 @@ import json
 import datetime
 import yaml
 
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 MONTH_IDX=['january', 'february', 'march', 'april', 'may', 'june', 'july',
            'august', 'september', 'october', 'november', 'december']
 
@@ -14,13 +14,15 @@ class GithubSiteBase(object):
     output_format = "yaml"
     output_kwargs = {}
 
-    def __init__(self, results_directory, points_config={"fw": 1, "s": 1, "fr": 1, "ba": 1, "ov": 1 }, stats_obj=None):
+    def __init__(self, results_directory, points_config={"fw": 1, "s": 1, "fr": 1, "ba": 1, "ov": 1 },
+                 blacklisted_rounds=None, stats_obj=None):
         self.rounds = None
         self.players = None
         self.stats = stats_obj
         self.points_config = points_config
         self.results_directory = results_directory
         self.results = {}
+        self.blacklisted_rounds = blacklisted_rounds or []
         self.round_regexp = re.compile(
             r'Round\s+(?P<round_id>\d+)\s+\((Fri|Sat|Sun|Mon|Tue|Wed|Thu)\,\s+(?P<month>\w+)\s+(?P<day>\d+)\)')
         for f in os.listdir(self.results_directory):
