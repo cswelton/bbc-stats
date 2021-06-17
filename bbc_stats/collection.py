@@ -204,6 +204,7 @@ class RoundsCollection(GithubSiteBase):
 
     def parse(self, project_root_dir):
         data = {}
+        print("Parsing rounds with blacklist: %s" % self.blacklisted_rounds)
         for round_name, round in self.results.items():
             print("Parsing %s" % round_name)
             valid_round, reason = self.check_round_valid(round_name, round)
