@@ -146,7 +146,7 @@ class RoundsCollection(GithubSiteBase):
         # Check if round blacklisted
         if round_name in self.blacklisted_rounds:
             print("Skipping round %s, round is blacklisted" % round_name)
-            return False, "Round deemed unofficial by board"
+            return False, "Round deemed unofficial"
         # Make sure all teams have even number of players
         team_length = 0
         min_players = self.points_config["min_players"]
