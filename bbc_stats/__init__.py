@@ -4,7 +4,7 @@ import json
 import datetime
 import yaml
 
-__version__ = '1.0.6'
+__version__ = '1.0.7'
 MONTH_IDX=['january', 'february', 'march', 'april', 'may', 'june', 'july',
            'august', 'september', 'october', 'november', 'december']
 
@@ -17,6 +17,7 @@ class GithubSiteBase(object):
     def __init__(self, results_directory, points_config={"fw": 1, "s": 1, "fr": 1, "ba": 1, "ov": 1 },
                  blacklisted_rounds=None, stats_obj=None):
         self.rounds = None
+        self.invalid_rounds = {}
         self.players = None
         self.stats = stats_obj
         self.points_config = points_config

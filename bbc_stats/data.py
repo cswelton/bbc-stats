@@ -25,6 +25,8 @@ class GithubData(GithubSiteBase):
                         "score": round["score"],
                         "total": round["score"],
                         "name": round["round"],
+                        "valid": round["round"] not in self.invalid_rounds,
+                        "reason": self.invalid_rounds.get(round["round"]),
                         "front": [round["hole_data"][str(i)] for i in range(1, 10)],
                         "back": [round["hole_data"][str(i)] for i in range(10, 19)],
                         "in": sum([round["hole_data"][str(i)]["score"] for i in range(10, 19)]),

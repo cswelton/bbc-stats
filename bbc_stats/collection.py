@@ -209,6 +209,7 @@ class RoundsCollection(GithubSiteBase):
             print("Parsing %s" % round_name)
             valid_round, reason = self.check_round_valid(round_name, round)
             if not valid_round:
+                self.invalid_rounds[round_name] = reason
                 data[round_name] = {
                     "name": round_name,
                     "valid": False,
@@ -310,6 +311,8 @@ class PlayersCollection(GithubSiteBase):
         else:
             valid_rounds = self.replace_rounds(target["all_rounds"], points_config["season_round_count"], points_config["replacement_scores"])
             target["points"] = sum([r["points"] for r in valid_rounds])
+        # Convert defaultdict to dict
+        target["rounds_by_month"] = dict(target["rounds_by_month"])
 
     def replace_rounds(self, all_rounds, season_round_count, replacement_scores):
         sorted_by_points = sorted(all_rounds[:season_round_count], key=itemgetter("points"))
