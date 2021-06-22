@@ -278,17 +278,17 @@ class PlayersCollection(GithubSiteBase):
                         target["overall_wins"] += 1
             if played:
                 round_date = datetime.date.fromordinal(round["date_timestamp"])
-                target["rounds_by_month"][round_date.month].append(
-                    {
-                        "name": round_name,
-                        "points": round_points,
-                        "date": round_date
-                    })
-                target["all_rounds"].append({
+                this_round = {
                     "name": round_name,
                     "points": round_points,
+                    "replaced_by": None,
+                    "replaces": None,
+                    "official": False,
+                    "over_limit": False,
                     "date": round_date
-                })
+                }
+                target["rounds_by_month"][round_date.month].append(this_round)
+                target["all_rounds"].append(this_round)
         target["all_rounds"] = sorted(target["all_rounds"], key=itemgetter("date"))
         if points_config["max_rounds_per_month"] > 0:
             for month, rounds in target["rounds_by_month"].items():
@@ -309,25 +309,39 @@ class PlayersCollection(GithubSiteBase):
                         round["ignored"] = False
             target["rounds_by_month"] = dict(target["rounds_by_month"])
         else:
-            valid_rounds = self.replace_rounds(target["all_rounds"], points_config["season_round_count"], points_config["replacement_scores"])
-            target["points"] = sum([r["points"] for r in valid_rounds])
+            self.replace_rounds(target, points_config["season_round_count"], points_config["replacement_scores"])
         # Convert defaultdict to dict
         target["rounds_by_month"] = dict(target["rounds_by_month"])
 
-    def replace_rounds(self, all_rounds, season_round_count, replacement_scores):
-        sorted_by_points = sorted(all_rounds[:season_round_count], key=itemgetter("points"))
+    def replace_rounds(self, target, season_round_count, replacement_scores):
+        all_rounds = target["all_rounds"]
+        sorted_by_points = list(sorted(list(all_rounds)[:season_round_count], key=itemgetter("points")))
         extra_rounds = []
         if len(all_rounds) > season_round_count:
             extra_sorted = sorted(all_rounds[season_round_count:], key=itemgetter('points'), reverse=True)
             extra_rounds = extra_sorted[:replacement_scores]
         replaced = []
+        for maybe_official in all_rounds:
+            if maybe_official["name"] in [x["name"] for x in sorted_by_points]:
+                maybe_official["official"] = True
+                maybe_official["over_limit"] = False
+            else:
+                maybe_official["official"] = False
+                maybe_official["over_limit"] = True
         for r in extra_rounds:
-            for idx, round in enumerate(list(sorted_by_points)):
+            for idx, round in enumerate(sorted_by_points):
                 if r["points"] > round["points"] and idx not in replaced:
                     replaced.append(idx)
                     sorted_by_points[idx] = r
+                    for the_round in all_rounds:
+                        if the_round["name"] == round["name"]:
+                            the_round["replaced_by"] = r["name"]
+                            the_round["official"] = False
+                        if the_round["name"] == r["name"]:
+                            the_round["replaces"] = round["name"]
+                            the_round["official"] = True
                     break
-        return sorted_by_points
+        target["points"] = sum([r["points"] for r in all_rounds if r["official"]])
 
     def parse(self, project_root_dir):
         data = {}

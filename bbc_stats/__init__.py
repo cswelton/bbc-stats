@@ -4,7 +4,7 @@ import json
 import datetime
 import yaml
 
-__version__ = '1.0.7'
+__version__ = '1.0.8'
 MONTH_IDX=['january', 'february', 'march', 'april', 'may', 'june', 'july',
            'august', 'september', 'october', 'november', 'december']
 
